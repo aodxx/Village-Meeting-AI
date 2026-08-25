@@ -19,6 +19,43 @@ Before changing code or architecture, read:
 7. `docs/API-CONTRACT.md`
 8. `docs/UX-FLOW.md`
 
+## Shared Google Drive Workspace
+
+The official Google Drive root folder for this project is:
+
+- Folder name: `VillageMeetingAI`
+- Folder URL: https://drive.google.com/drive/folders/1IEUaLmKAJqgpJaD8jsfdfnda9CmOWODY
+- Folder ID: `1IEUaLmKAJqgpJaD8jsfdfnda9CmOWODY`
+
+AI agents that have permission to use the project's Google Drive must treat this folder as the **single project root for Drive-side artifacts**.
+
+When an agent needs to create Drive folders or files for Village Meeting AI, it must create them inside `VillageMeetingAI` rather than creating unrelated folders elsewhere in the user's Drive.
+
+Recommended Drive-side structure:
+
+```text
+VillageMeetingAI/
+  01-Meetings/
+  02-Audio-Temp/
+  03-Transcripts/
+  04-Reports/
+  05-PDF/
+  06-Attachments/
+  90-Tests/
+  99-Archive/
+```
+
+Rules:
+
+1. Do not create a second project root unless explicitly instructed.
+2. Runtime folders should be created only when needed; avoid empty or duplicate folders.
+3. Temporary meeting audio belongs under `02-Audio-Temp/` and remains subject to the audio-deletion policy.
+4. Generated public/final documents belong under `04-Reports/` and `05-PDF/` as appropriate.
+5. Test/demo assets belong under `90-Tests/`; do not mix them with real meeting records.
+6. Archived project artifacts belong under `99-Archive/` rather than being scattered across Drive.
+7. Never store API keys, OAuth tokens, passwords, or other secrets in Drive documents.
+8. GitHub remains the source of truth for source code and versioned technical documentation; Google Drive is the project workspace for runtime files, generated documents, meeting artifacts, and files that belong naturally in Drive.
+
 ## Non-Negotiable Product Rules
 
 1. AI may propose a resolution, but only a human can confirm it.

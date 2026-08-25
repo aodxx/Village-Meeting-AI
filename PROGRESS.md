@@ -4,9 +4,9 @@ Last updated: 2026-08-26
 
 ## Current Phase
 
-**Phase 0 — Product Foundation / Phase 0.1 Technical Spike**
+**Phase 0 — Product Foundation / Phase 0.1 Zero-Cost STT Technical Spike**
 
-Status: **Architecture recommendation complete; empirical Thai meeting benchmark pending**
+Status: **Commercial-provider recommendation superseded; zero-service-fee transcription approach required**
 
 ## Completed
 
@@ -21,96 +21,91 @@ Status: **Architecture recommendation complete; empirical Thai meeting benchmark
 - [x] Initial technical architecture created
 - [x] Initial Google Sheets data model created
 - [x] Implementation roadmap created
-- [x] Phase 0.1 provider constraint research completed
+- [x] Initial commercial STT provider research completed
 - [x] Provider-neutral STT adapter and asynchronous orchestration design completed
-- [x] STT Technical Spike document created
-- [x] Architecture, API contract, data model, and UX flow aligned with the STT decision
+- [x] Initial STT Technical Spike document created
+- [x] Zero-cost STT product policy added in `docs/FREE-STT-POLICY.md`
+- [x] Zero-cost next-step brief added in `docs/ZERO-COST-STT-NEXT-STEP.md`
+- [x] Azure-first recommendation removed from the active V1 direction
 
 ## Important Product Decisions
 
 1. Public readers do not need to login.
 2. Public readers can read the full final report, download PDF, and share the link.
 3. Attendance/member management is not part of V1.
-4. Speaker identity in V1 is generic: Speaker 1 / Speaker 2 / Speaker 3.
-5. AI proposes possible resolutions; humans confirm them.
-6. AI should identify follow-up work and responsible parties only when supported by the transcript.
-7. Agenda can be provided before the meeting or inferred by AI afterward.
-8. Transcription can be live or post-meeting.
-9. Audio should be deletable only after transcript, AI processing, and final report are safely completed.
-10. PDF visual direction is Modern + Formal, not a rigid legacy government form.
-11. Primary POST transcription candidate is Azure Speech Batch Standard with `th-TH`, mono audio, diarization, and word-level timestamps; provider remains behind an adapter.
-12. POST batch transcript is authoritative for AI analysis and reports. LIVE transcript remains a preview and is reconciled by a post-meeting batch run.
-13. Thai diarization quality for real village audio is not yet empirically validated because the Repository contains no authorized audio fixture; no production quality claim is made yet.
+4. Voice identity is not required in V1.
+5. Speaker diarization is optional and must not force use of a paid service.
+6. AI proposes possible resolutions; humans confirm them.
+7. AI should identify follow-up work and responsible parties only when supported by the transcript.
+8. Agenda can be provided before the meeting or inferred by AI afterward.
+9. Transcription can be live or post-meeting, but live mode may be reduced or deferred if it conflicts with the zero-cost requirement.
+10. Audio should be deletable only after transcript, AI processing, and final report are safely completed.
+11. PDF visual direction is Modern + Formal, not a rigid legacy government form.
+12. **V1 must not require a paid Speech-to-Text service.**
+13. AI agents may use any technical approach—open source, local, browser, self-hosted, free compute, free tier, chunking, or hybrid—as long as normal V1 use does not require transcription service fees.
+14. Commercial metered STT services are not mandatory/default V1 dependencies. They may remain optional future alternatives only.
 
-## Current Repository Foundation
+## Superseded Decision
 
-Phase 0.1 added/updated:
+The earlier recommendation to use Azure Speech Batch Standard as the primary POST transcription provider is **no longer the product direction**.
 
-- `docs/STT-TECHNICAL-SPIKE.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DATA-MODEL.md`
-- `docs/API-CONTRACT.md`
-- `docs/UX-FLOW.md`
-
-Expected core documents:
-
-- `README.md`
-- `PRD.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DATA-MODEL.md`
-- `docs/API-CONTRACT.md`
-- `docs/UX-FLOW.md`
-- `ROADMAP.md`
-- `PROGRESS.md`
-- `CONTRIBUTING.md`
-- `AGENTS.md`
+That research remains useful as a comparison baseline only.
 
 ## Next Step
 
-### Phase 0.1 — Technical Spike
+### Phase 0.1 — Zero-Cost STT Technical Spike
 
-Status: **Architecture and provider feasibility completed; quality benchmark remains open**
+Find and empirically test the best practical transcription architecture that requires **no paid STT service for normal V1 operation**.
 
-Before building the UI, verify the most technically risky part first:
+Candidate families may include, but are not limited to:
 
-**Can the selected speech-to-text path reliably handle long Thai village meetings (target 1–3 hours), speaker separation, timestamps, and reasonable cost?**
+- Whisper / faster-whisper or other open-source STT
+- Local/on-device processing
+- Browser/WebAssembly/WebGPU processing
+- Self-hosted lightweight processing
+- Free notebook/compute approaches where operationally practical
+- Truly usable free-tier APIs that do not require mandatory paid usage for V1
+- Hybrid processing
 
-The documented implementation candidate is Azure Speech Batch Standard. This is a conditional engineering recommendation, not a claim that Thai meeting quality has passed. A representative, authorized audio fixture is still required to close the quality gate.
+The agent is not restricted to this list.
 
-The spike should test:
+## Benchmark Questions
 
-- Thai speech quality
-- Multiple speakers
-- Background noise
-- Long audio duration
-- File/chunk limits
-- Processing time
-- Apps Script orchestration limits
-- Retry behavior
-- Cost estimate
-- Provider-neutral adapter boundary
-- Asynchronous Apps Script orchestration with persisted job state and idempotent retry
+The spike should answer:
+
+- Is Thai transcription good enough to create a correct meeting-report draft?
+- Can it handle a real 1–3 hour meeting, directly or through chunking?
+- What device/server resources are required?
+- Can users operate it without a paid transcription bill?
+- How long does processing take?
+- How are failures/retries handled?
+- Are timestamps available?
+- Is speaker separation available for free? If not, can V1 work without it?
+- Can the output feed the existing Gemini/report-analysis layer safely?
 
 ## Do Not Start Yet
 
-Avoid building a large UI or PDF system before the transcription architecture is validated. The recording/transcription path is the highest-risk dependency and could force architectural changes.
+Avoid building a large UI or PDF system before a viable zero-cost transcription path has been proven.
 
 ## Phase 0.1 Deliverables
 
-- [x] Provider comparison and constraints documented in `docs/STT-TECHNICAL-SPIKE.md`
-- [x] Azure Batch Standard selected as implementation candidate for POST mode
-- [x] Google Cloud, AWS, OpenAI, and self-hosted alternatives documented
-- [x] Adapter, normalization, chunking, staging, retry, and live-preview semantics documented
-- [ ] Authorized Thai audio benchmark completed for clear speech, multiple speakers, noise, overlap, 1-hour and 3-hour cases
-- [ ] Actual provider cost and processing-time measurements recorded from the benchmark
-- [ ] Final production provider confirmation after benchmark
+- [x] Initial paid-provider comparison preserved for reference
+- [x] Provider-neutral adapter boundary documented
+- [x] Zero-cost STT policy documented
+- [ ] Free/open-source candidate shortlist researched
+- [ ] At least one zero-service-fee prototype runs end-to-end
+- [ ] Authorized Thai audio benchmark completed
+- [ ] 1-hour test completed
+- [ ] Long-meeting/chunking path demonstrated
+- [ ] Actual processing time and resource requirements recorded
+- [ ] Final zero-cost V1 transcription architecture selected
 
 ## Definition of Phase 0 Done
 
 Phase 0 is complete when:
 
 - [ ] API contract is finalized
-- [ ] Speech-to-text provider/approach is selected
+- [ ] Zero-cost speech-to-text approach is selected
 - [ ] Long-meeting technical spike passes
 - [ ] Frontend stack is selected
 - [ ] Deployment approach is selected
@@ -128,4 +123,6 @@ Any AI agent or developer starting work should read in this order:
 6. `docs/DATA-MODEL.md`
 7. `docs/API-CONTRACT.md`
 8. `docs/UX-FLOW.md`
-9. `AGENTS.md`
+9. `docs/FREE-STT-POLICY.md`
+10. `docs/ZERO-COST-STT-NEXT-STEP.md`
+11. `AGENTS.md`

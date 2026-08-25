@@ -1,0 +1,40 @@
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets / credentials
+credentials.json
+service-account*.json
+*.pem
+*.key
+
+# Apps Script local auth / clasp
+.claspignore.local
+.clasprc.json
+
+# Temporary audio / generated files
+tmp/
+temp/
+recordings/
+exports/

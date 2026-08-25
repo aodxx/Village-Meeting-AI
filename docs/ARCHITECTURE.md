@@ -32,6 +32,45 @@ Google Apps Script Web App API
           +--> Gemini Analysis Adapter
 ```
 
+## 2.1 Official Google Drive Root
+
+Google Drive root ของโปรเจกต์นี้ถูกกำหนดตายตัวเป็น:
+
+- Folder name: `VillageMeetingAI`
+- Folder URL: https://drive.google.com/drive/folders/1IEUaLmKAJqgpJaD8jsfdfnda9CmOWODY
+- Folder ID: `1IEUaLmKAJqgpJaD8jsfdfnda9CmOWODY`
+
+AI Agent หรือ Backend ที่ได้รับสิทธิ์ Drive ต้องใช้โฟลเดอร์นี้เป็น **root เดียวของโปรเจกต์บน Google Drive** และไม่สร้าง project root ซ้ำในตำแหน่งอื่น เว้นแต่ได้รับคำสั่งโดยตรง
+
+Recommended runtime structure:
+
+```text
+VillageMeetingAI/
+  01-Meetings/
+  02-Audio-Temp/
+  03-Transcripts/
+  04-Reports/
+  05-PDF/
+  06-Attachments/
+  90-Tests/
+  99-Archive/
+```
+
+แนวทางการใช้งาน:
+
+- `01-Meetings/` ใช้สำหรับทรัพยากรที่ต้องจัดกลุ่มตามการประชุมเมื่อจำเป็น
+- `02-Audio-Temp/` ใช้เก็บเสียงต้นฉบับชั่วคราว และต้องอยู่ภายใต้ Audio Lifecycle ของระบบ
+- `03-Transcripts/` ใช้เมื่อมีความจำเป็นต้องเก็บ transcript เป็นไฟล์บน Drive เพิ่มจากข้อมูลในฐานข้อมูล
+- `04-Reports/` ใช้สำหรับรายงานที่สร้างโดยระบบ
+- `05-PDF/` ใช้สำหรับ Final PDF ที่สร้างจากรายงาน
+- `06-Attachments/` ใช้สำหรับเอกสาร/รูปประกอบการประชุมในอนาคต
+- `90-Tests/` ใช้เฉพาะไฟล์ทดลอง เดโม และ technical spike
+- `99-Archive/` ใช้เก็บไฟล์ที่ไม่ใช้งานประจำแต่ยังต้องการรักษาไว้
+
+ไม่ควรสร้างโฟลเดอร์ย่อยทั้งหมดล่วงหน้าโดยไม่มีความจำเป็น ให้สร้างแบบ on-demand และต้องป้องกัน duplicate folder creation
+
+GitHub เป็น source of truth สำหรับ source code และเอกสารเทคนิคที่ versioned ส่วน Google Drive เป็น workspace สำหรับไฟล์ runtime, เสียง, เอกสารประชุม และไฟล์ที่ระบบสร้าง
+
 ## 3. Frontend
 
 Mobile-first PWA responsibilities:
@@ -84,6 +123,8 @@ appsscript/
 ```
 
 > หมายเหตุ: โครงสร้างเป็นแนวทาง ไม่บังคับให้แยกไฟล์ทันทีหากเครื่องมือพัฒนาในช่วงแรกทำงานสะดวกกว่าด้วยไฟล์น้อยกว่า แต่ขอบเขต responsibility ต้องชัดเจน
+
+`StorageService` ต้องอ้างอิง Google Drive root ผ่าน configuration เช่น Script Property ชื่อ `DRIVE_ROOT_FOLDER_ID` โดยค่าของโปรเจกต์นี้คือ `1IEUaLmKAJqgpJaD8jsfdfnda9CmOWODY` ห้าม hard-code ซ้ำกระจัดกระจายในหลายไฟล์
 
 ## 5. AI Service Layer
 
@@ -157,6 +198,8 @@ Delete guard ต้องตรวจ:
 - AI analysis complete
 - final report exists
 
+ไฟล์เสียงจริงต้องถูกวางภายใต้ `VillageMeetingAI/02-Audio-Temp/` หรือโฟลเดอร์ย่อยของ meeting ที่ระบบกำหนด และต้องไม่หลุดออกไปอยู่นอก project root
+
 ## 8. Public Report Architecture
 
 Public report endpoint ต้องเป็น read-only
@@ -169,6 +212,7 @@ Public response ต้องมาจาก Final Report snapshot ไม่ใ�
 
 - Secrets เก็บใน Apps Script Properties
 - ห้าม commit API keys
+- ห้ามเก็บ API keys, OAuth tokens หรือ passwords ใน Google Drive
 - Validate content type/size ของ upload
 - Sanitize text ก่อน render public page
 - Public route read-only
@@ -184,6 +228,7 @@ Public response ต้องมาจาก Final Report snapshot ไม่ใ�
 - การเรียก `processMeeting` ซ้ำไม่ควรสร้าง report ซ้ำหลายชุดโดยไม่มี version
 - Upload completion ควรตรวจ MeetingID และ state
 - AI output invalid ต้องเก็บ error state/message และให้ retry ได้
+- การสร้าง Drive folder/file ต้องป้องกันชื่อหรือ resource ซ้ำจากการ retry
 
 ## 11. Performance Considerations
 

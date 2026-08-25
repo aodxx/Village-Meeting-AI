@@ -115,7 +115,9 @@ Show step-by-step status:
 - วิเคราะห์เรื่องติดตาม
 - สร้างร่างรายงาน
 
-User may leave this screen.
+User may leave this screen. Processing continues from persisted backend job state; the user does not need to keep this screen open. The UI should show that batch transcription can take time and provide refresh/retry states rather than suggesting that the job is complete immediately.
+
+For `LIVE` mode, the text shown during recording is a preview. After the meeting ends, the system runs post-meeting transcription again; the resulting speaker-separated transcript is the authoritative input for AI analysis and the report flow.
 
 ## Screen 7 — Transcript
 
@@ -126,6 +128,8 @@ Display transcript as speaker blocks:
 - ผู้พูด 3
 
 Each block includes timestamp.
+
+The transcript screen shows normalized generic labels only (`ผู้พูด 1`, `ผู้พูด 2`, ...). It must not imply that a label is a verified person identity. A live preview may be replaced by the authoritative post-meeting transcript after processing completes.
 
 Segments around important markers receive a visible ⭐ indicator.
 

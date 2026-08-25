@@ -25,6 +25,10 @@
 | AudioFileID | string | no | Drive file id ชั่วคราว |
 | AudioDeletedAt | datetime | no | เวลาลบไฟล์เสียง |
 | ProcessingError | string | no | error ล่าสุด |
+| AudioDurationMs | number | no | ความยาวเสียงที่ตรวจสอบแล้วจากต้นไฟล์ |
+| AudioSizeBytes | number | no | ขนาดไฟล์เสียงต้นฉบับที่ตรวจสอบแล้ว |
+| AudioMimeType | string | no | MIME type หลังผ่าน preflight |
+| AudioFingerprint | string | no | fingerprint สำหรับ idempotency/retry; ไม่ใช่ secret |
 | CreatedAt | datetime | yes | created timestamp |
 | UpdatedAt | datetime | yes | updated timestamp |
 
@@ -42,6 +46,32 @@
 | CreatedAt | datetime | yes | |
 | UpdatedAt | datetime | yes | |
 
+## Sheet: TranscriptionJobs
+
+ตารางนี้เป็น operational state สำหรับงาน asynchronous และไม่ใช่ข้อมูลที่เปิดเผยใน Public Report
+
+| Column | Type | Required | Description |
+|---|---|---:|---|
+| JobID | string | yes | Primary key ของงานภายในระบบ |
+| MeetingID | string | yes | FK -> Meetings |
+| Mode | enum | yes | LIVE / POST |
+| ProviderKey | string | yes | provider key ภายใน; ไม่ส่งออก public |
+| ProviderJobRef | string | no | job handle ของ provider; operational metadata |
+| IdempotencyKey | string | yes | Meeting + audio fingerprint + config version |
+| ConfigVersion | string | yes | version ของ STT configuration |
+| Status | enum | yes | PENDING / RUNNING / SUCCEEDED / FAILED / CANCELLED |
+| Attempt | number | yes | จำนวน attempt ปัจจุบัน |
+| LastPolledAt | datetime | no | เวลาตรวจสถานะล่าสุด |
+| NextRetryAt | datetime | no | เวลา retry ถัดไปเมื่อ retry ได้ |
+| ErrorCode | string | no | error code ที่จัดประเภทแล้ว |
+| ErrorMessage | string | no | readable internal error; ไม่เปิดเผย public |
+| SubmittedAt | datetime | no | |
+| CompletedAt | datetime | no | |
+| CreatedAt | datetime | yes | |
+| UpdatedAt | datetime | yes | |
+
+กฎสำคัญคือห้ามมี active job ซ้ำสำหรับ `MeetingID + IdempotencyKey` และการ persist result ต้องตรวจ job/Meeting state ก่อนเขียน `TranscriptSegments`
+
 ## Sheet: TranscriptSegments
 
 | Column | Type | Required | Description |
@@ -53,6 +83,7 @@
 | EndMs | number | yes | เวลาจบ |
 | Text | long text | yes | ข้อความถอดเสียง |
 | ImportantMarker | boolean | yes | อยู่ในช่วงสำคัญหรือไม่ |
+| SourceJobID | string | no | FK -> TranscriptionJobs; operational provenance |
 | CreatedAt | datetime | yes | |
 
 ## Sheet: ImportantMarkers
@@ -158,4 +189,5 @@ Suggested keys:
 3. Resolution ที่เข้า Final Report ต้อง `CONFIRMED`
 4. Final Report ต้องไม่อ่าน live data จาก Draft หลัง finalize
 5. Audio delete ต้องบันทึก `AudioDeletedAt`
-6. Public page ต้องอ้างอิงเฉพาะ Report ที่ `FINAL` หรือ `PUBLISHED`
+6. `TranscriptionJobs` ที่มี `IdempotencyKey` เดียวกันต้องไม่สร้าง transcript segments ซ้ำ
+7. Public page ต้องอ้างอิงเฉพาะ Report ที่ `FINAL` หรือ `PUBLISHED`

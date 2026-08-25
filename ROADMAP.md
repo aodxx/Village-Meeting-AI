@@ -14,6 +14,8 @@ Status: **In progress**
 - [ ] Validate speech-to-text approach for long Thai meetings
 - [ ] Decide frontend stack and deployment path
 
+Phase 0.1 status: **Provider feasibility and adapter architecture documented.** Azure Speech Batch Standard is the conditional candidate for POST mode; an authorized Thai multi-speaker/noise/1–3 hour benchmark remains required before production confirmation.
+
 Exit criteria: architecture decisions are stable enough to begin implementation without reworking core data flow.
 
 ## Phase 1 — App Foundation

@@ -114,8 +114,10 @@ appsscript/
   MeetingService.gs
   AgendaService.gs
   TranscriptService.gs
-  AIService.gs
-  ReportService.gs
+   AIService.gs
+   SpeechToTextAdapter.gs
+   TranscriptionJobService.gs
+   ReportService.gs
   StorageService.gs
   SheetRepository.gs
   Validation.gs
@@ -165,6 +167,24 @@ Provider สามารถเปลี่ยนได้ในอนาคต�
 
 ต้อง validate schema ก่อนบันทึกลง Sheets
 
+### 5.3 Phase 0.1 STT Decision
+
+สำหรับ V1 ให้ใช้ **Azure AI Speech Batch Transcription — Standard** เป็น implementation candidate หลักของ `POST` transcription โดยกำหนด `th-TH`, ใช้ mono audio, เปิด diarization และขอ word-level timestamps ผ่าน Speech-to-text REST API v3.2 หรือใหม่กว่า การตัดสินใจนี้เป็น provider selection สำหรับ adapter implementation ไม่ใช่การเปิดเผย provider ใน frontend, API response หรือ Report layer
+
+Azure batch เป็น asynchronous และเอกสารระบุว่า diarization ใช้กับ mono audio, รองรับผู้พูดน้อยกว่า 36 คน และจำกัด source audio 240 นาทีต่อไฟล์เมื่อเปิด diarization ซึ่งครอบคลุมเป้าหมาย V1 1–3 ชั่วโมง [1] [2] ราคามาตรฐาน batch เป็นข้อมูลที่ต้องตรวจซ้ำก่อน production แต่หน้าราคา ณ Technical Spike ระบุ `$0.18` ต่อ audio hour และรวม batch diarization แล้ว [3]
+
+Google Cloud Speech-to-Text V2, Amazon Transcribe และ OpenAI diarization ยังคงเป็น fallback/benchmark candidates โดยต้องผ่าน compatibility และ quality benchmark ก่อนเปลี่ยน provider ระบบต้องเก็บ normalized transcript เดิมและไม่ให้ provider-specific response ไหลไปยัง Report หรือ Public layer
+
+`POST` batch result เป็น authoritative transcript สำหรับ AI analysis และ Final Report ส่วน `LIVE` transcript เป็น preview ระหว่างประชุม เมื่อจบประชุมต้อง enqueue `POST` job ใหม่เพื่อสร้าง transcript ที่ authoritative; live partial result ห้ามใช้ยืนยันมติหรือสร้าง Final Report โดยตรง
+
+### 5.4 Provider-neutral adapter boundary
+
+Adapter ต้องแยกเป็น capability-aware interface โดยมีอย่างน้อย `submitBatch`, `getJobStatus`, `fetchBatchResult` และ optional live methods (`startLive`, `appendLiveAudio`, `stopLive`) provider ที่ไม่รองรับ capability ใดต้องรายงาน `false` ไม่สร้าง fake behavior
+
+ผลลัพธ์จากทุก provider ต้อง normalize เป็น `{ speaker, startMs, endMs, text }` และ map speaker เป็น `SPEAKER_1...` ภายใน Meeting เดียวกันเท่านั้น ห้ามทำ voice identity ข้ามการประชุม การรวม word/phrase timestamp เป็น segment, การบวก chunk offset, การจัดการ overlap และการคำนวณ `ImportantMarker` เป็น responsibility ของ `TranscriptService` ไม่ใช่ Report layer
+
+Raw response, provider job handle และ staging reference เป็น operational metadata ที่ต้องไม่ปรากฏใน Public Report และต้องไม่เก็บ credential/SAS token ไว้ใน Sheet หรือ Drive document
+
 ## 6. State Machine
 
 ```text
@@ -186,7 +206,7 @@ Backend ต้องปฏิเสธ state transition ที่ไม่ถู
 
 ## 7. Audio Lifecycle
 
-Audio เป็น temporary source:
+audio เป็น temporary source:
 
 ```text
 record -> upload -> transcribe -> analyze -> review -> final -> delete on explicit user confirmation
@@ -199,6 +219,12 @@ Delete guard ต้องตรวจ:
 - final report exists
 
 ไฟล์เสียงจริงต้องถูกวางภายใต้ `VillageMeetingAI/02-Audio-Temp/` หรือโฟลเดอร์ย่อยของ meeting ที่ระบบกำหนด และต้องไม่หลุดออกไปอยู่นอก project root
+
+### 7.1 Provider staging
+
+Provider ที่เลือกใช้ใน Phase 0.1 รับไฟล์จาก object storage ของ provider ไม่ใช่ Google Drive โดยตรง ดังนั้น backend อาจสร้าง staging copy ชั่วคราวไปยัง Azure Blob หรือ object storage ของ fallback provider ได้ แต่ staging copy ต้องผูกกับ `MeetingID`/job, มี TTL, ไม่ใช่ project root และต้องลบหลังดึงผลสำเร็จหรือตาม failure cleanup policy ต้นฉบับใน `VillageMeetingAI/02-Audio-Temp/` เป็น canonical source จนกว่า audio deletion guard จะผ่าน
+
+ห้ามส่งไฟล์เสียงยาวผ่าน Google Sheets หรือรอ provider ให้เสร็จใน Apps Script request เดียว การย้ายไฟล์และการลบ staging ต้องเป็นขั้นตอนที่ retry ได้และตรวจ resource เดิมก่อนสร้างซ้ำ
 
 ## 8. Public Report Architecture
 
@@ -234,12 +260,28 @@ Public response ต้องมาจาก Final Report snapshot ไม่ใ�
 
 Google Apps Script มี execution limits ดังนั้นงานเสียงยาวต้องออกแบบเผื่อ:
 
-- chunking
+- chunking เมื่อ provider มี file cap
 - asynchronous/retry pattern
 - external STT provider callbacks/polling หากจำเป็น
 - ไม่ส่งไฟล์เสียงขนาดใหญ่ผ่าน Sheet
 
-ก่อน implementation จริงต้องทำ Technical Spike เรื่องการประชุม 1–3 ชั่วโมงเพื่อยืนยันว่า Apps Script orchestration เพียงพอ
+Apps Script runtime สูงสุด 6 นาทีต่อ execution และ URL Fetch POST/response สูงสุด 50 MB ต่อ call [4] ดังนั้น `processMeeting` ต้องสร้างหรือดำเนินการ job แบบสั้นแล้วจบ ไม่ busy-wait, ไม่โหลดเสียงยาวเข้า Properties และไม่สมมติว่า browser จะเปิดค้างอยู่ การ poll ต้องอ่าน/เขียน operational job state และใช้ backoff เพื่อหลีกเลี่ยง quota exhaustion
+
+Azure batch มี latency แบบ best-effort; เอกสารระบุว่าช่วง peak อาจรอเริ่มงานได้ถึง 30 นาที และ extreme case อาจนานถึง 24 ชั่วโมง [5] UX จึงต้องรองรับ `PROCESSING` ต่อเนื่อง, การออกจากหน้า, refresh และ retry โดยไม่เปลี่ยน Meeting state ผิดลำดับ
+
+## 11.1 Idempotent processing contract
+
+ทุก transcription job ต้องมี stable `idempotencyKey` ที่ผูกกับ Meeting, audio fingerprint และ STT configuration version พร้อมเก็บ provider job handle แยกใน operational state การ retry หลัง submit สำเร็จต้องค้นหา job เดิมก่อนสร้างงานใหม่ และการ persist transcript ต้องไม่สร้าง `TranscriptSegments` ซ้ำ
+
+Retry เฉพาะ transient failures เช่น timeout, 429 และ 5xx ด้วย exponential backoff และ jitter ส่วน validation error, unsupported locale, invalid audio และ authentication error ต้องหยุดและส่ง error ที่อ่านได้ให้ผู้ดูแล การที่ผู้ใช้ออกจากหน้า Processing ไม่ถือเป็น cancellation
+
+## Phase 0.1 references
+
+[1]: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/batch-transcription-create "Azure — Create a batch transcription"
+[2]: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-services-quotas-and-limits "Azure — Quotas and limits for Speech"
+[3]: https://azure.microsoft.com/en-us/pricing/details/speech/ "Azure — Speech pricing"
+[4]: https://developers.google.com/apps-script/guides/services/quotas "Google Apps Script — Quotas for Google Services"
+[5]: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/batch-transcription "Azure — Batch transcription overview"
 
 ## 12. Future Migration Path
 

@@ -50,6 +50,10 @@ AI มีหน้าที่ช่วยฟัง ช่วยจัดระ�
 - [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md) — Google Sheets/Data Model
 - [`docs/API-CONTRACT.md`](docs/API-CONTRACT.md) — API Contract
 - [`docs/UX-FLOW.md`](docs/UX-FLOW.md) — Screen & UX Flow
+- [`docs/FREE-STT-POLICY.md`](docs/FREE-STT-POLICY.md) — นโยบาย zero-service-fee STT สำหรับ V1
+- [`docs/ZERO-COST-STT-NEXT-STEP.md`](docs/ZERO-COST-STT-NEXT-STEP.md) — benchmark backlog และงานถัดไปของ free STT
+- [`docs/STT-TECHNICAL-SPIKE.md`](docs/STT-TECHNICAL-SPIKE.md) — ผล Technical Spike และ decision summary
+- [`docs/research/STT-RESEARCH-ARCHIVE.md`](docs/research/STT-RESEARCH-ARCHIVE.md) — research archive สำหรับทีมและแหล่งอ้างอิง
 - [`ROADMAP.md`](ROADMAP.md) — แผนพัฒนาเป็น Phase
 - [`PROGRESS.md`](PROGRESS.md) — สถานะปัจจุบันและ Next Step
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — แนวทางสำหรับนักพัฒนา
@@ -61,7 +65,7 @@ AI มีหน้าที่ช่วยฟัง ช่วยจัดระ�
 
 Product concept, UX architecture และ PRD V1 ถูกกำหนดแล้ว กำลังจัดเตรียม Technical Foundation ก่อนเริ่มเขียนโค้ดจริง
 
-ดูสถานะล่าสุดที่ [`PROGRESS.md`](PROGRESS.md)
+ดูสถานะล่าสุดที่ [`PROGRESS.md`](PROGRESS.md) และอ่าน research decision trail ที่ [`docs/research/STT-RESEARCH-ARCHIVE.md`](docs/research/STT-RESEARCH-ARCHIVE.md)
 
 ## หลักการสำคัญ
 

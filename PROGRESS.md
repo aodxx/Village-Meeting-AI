@@ -30,6 +30,7 @@ Status: **Commercial-provider recommendation superseded; zero-service-fee transc
 - [x] Free/open-source candidate shortlist researched and documented
 - [x] Local Thai STT prototype runs end-to-end with zero STT service fee
 - [x] Smoke-test result and evaluator committed under `tools/free_stt_spike/`
+- [x] STT research archive added at `docs/research/STT-RESEARCH-ARCHIVE.md` with index for team review
 
 ## Important Product Decisions
 

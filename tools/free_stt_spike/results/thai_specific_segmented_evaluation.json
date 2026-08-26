@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "failures": [],
+  "checks": {
+    "zeroSttFee": true,
+    "thaiDetected": true,
+    "normalizedSegments": true,
+    "speakerOrder": true,
+    "averageCerProxy": 0.1611
+  },
+  "segmentComparisons": [
+    {
+      "expectedLength": 52,
+      "actualLength": 52,
+      "charErrors": 0,
+      "cer": 0.0
+    },
+    {
+      "expectedLength": 45,
+      "actualLength": 46,
+      "charErrors": 14,
+      "cer": 0.3111
+    },
+    {
+      "expectedLength": 48,
+      "actualLength": 48,
+      "charErrors": 0,
+      "cer": 0.0
+    },
+    {
+      "expectedLength": 54,
+      "actualLength": 52,
+      "charErrors": 18,
+      "cer": 0.3333
+    }
+  ],
+  "resultMetadata": {
+    "adapter": {
+      "providerId": "local-thai-biodatlab-segmented",
+      "asrModel": "biodatlab/distill-whisper-th-small",
+      "boundaryModel": "Systran/faster-whisper-base",
+      "diarization": "pitch-kmeans-baseline",
+      "language": "th",
+      "sttFee": 0
+    },
+    "processingSeconds": 43.963,
+    "segmentCount": 4
+  }
+}

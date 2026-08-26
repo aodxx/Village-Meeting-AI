@@ -55,8 +55,11 @@
 | JobID | string | yes | Primary key ของงานภายในระบบ |
 | MeetingID | string | yes | FK -> Meetings |
 | Mode | enum | yes | LIVE / POST |
-| ProviderKey | string | yes | provider key ภายใน; ไม่ส่งออก public |
-| ProviderJobRef | string | no | job handle ของ provider; operational metadata |
+| AdapterKey | string | yes | adapter key ภายใน เช่น local worker; ไม่ส่งออก public |
+| AdapterJobRef | string | no | job handle ภายใน/ภายนอก; operational metadata |
+| ModelVersion | string | yes | model/revision ที่ใช้ถอดเสียง |
+| RuntimeClass | enum | yes | LOCAL / EXTERNAL_FALLBACK |
+| CostClass | enum | yes | ZERO_STT_FEE / PAID_STT |
 | IdempotencyKey | string | yes | Meeting + audio fingerprint + config version |
 | ConfigVersion | string | yes | version ของ STT configuration |
 | Status | enum | yes | PENDING / RUNNING / SUCCEEDED / FAILED / CANCELLED |
@@ -65,12 +68,14 @@
 | NextRetryAt | datetime | no | เวลา retry ถัดไปเมื่อ retry ได้ |
 | ErrorCode | string | no | error code ที่จัดประเภทแล้ว |
 | ErrorMessage | string | no | readable internal error; ไม่เปิดเผย public |
+| PeakRamBytes | number | no | ทรัพยากรสูงสุดที่วัดได้จาก local worker |
+| ProcessingSeconds | number | no | เวลา inference/worker ที่วัดได้ |
 | SubmittedAt | datetime | no | |
 | CompletedAt | datetime | no | |
 | CreatedAt | datetime | yes | |
 | UpdatedAt | datetime | yes | |
 
-กฎสำคัญคือห้ามมี active job ซ้ำสำหรับ `MeetingID + IdempotencyKey` และการ persist result ต้องตรวจ job/Meeting state ก่อนเขียน `TranscriptSegments`
+กฎสำคัญคือห้ามมี active job ซ้ำสำหรับ `MeetingID + IdempotencyKey` และการ persist result ต้องตรวจ job/Meeting state ก่อนเขียน `TranscriptSegments` ค่า `CostClass=ZERO_STT_FEE` หมายถึงไม่มีค่า STT service charge ต่อการรัน แต่ไม่รับรองว่า compute, storage หรือ network เป็นศูนย์
 
 ## Sheet: TranscriptSegments
 

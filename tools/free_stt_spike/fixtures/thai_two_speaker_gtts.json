@@ -1,0 +1,20 @@
+{
+  "fixtureId": "thai_two_speaker_gtts_v2",
+  "kind": "synthetic",
+  "purpose": "local STT adapter smoke test; not a meeting quality benchmark",
+  "language": "th",
+  "expectedSpeakerCount": 2,
+  "expectedOrder": [
+    "SPEAKER_A",
+    "SPEAKER_B",
+    "SPEAKER_A",
+    "SPEAKER_B"
+  ],
+  "expectedTexts": [
+    "สวัสดีครับ วันนี้เราจะประชุมเรื่องน้ำประปาของหมู่บ้าน",
+    "ขอเสนอให้ตรวจสอบถังเก็บน้ำและบันทึกปัญหาที่พบ",
+    "ที่ประชุมควรกำหนดวันซ่อมและติดตามผลในสัปดาห์หน้า",
+    "รับทราบค่ะ ขอให้ผู้รับผิดชอบแจ้งความคืบหน้าต่อที่ประชุม"
+  ],
+  "privacy": "no real meeting or personal data"
+}

@@ -14,9 +14,9 @@ Status: **In progress**
 - [ ] Validate speech-to-text approach for long Thai meetings
 - [ ] Decide frontend stack and deployment path
 
-Phase 0.1 status: **Provider feasibility and adapter architecture documented.** Azure Speech Batch Standard is the conditional candidate for POST mode; an authorized Thai multi-speaker/noise/1–3 hour benchmark remains required before production confirmation.
+Phase 0.1 status: **Zero-STT-fee local Thai STT worker prototype validated end-to-end.** The local worker is the primary candidate for POST mode; paid providers including Azure Speech Batch Standard are fallback-only. An authorized Thai multi-speaker/noise/1–3 hour benchmark remains required before production confirmation.
 
-Exit criteria: architecture decisions are stable enough to begin implementation without reworking core data flow.
+Exit criteria: local STT plumbing, normalized contract, zero-STT-fee policy, and adapter boundary are documented and smoke-tested; real-meeting quality, long-audio resource, diarization, and restart/retry gates remain before Phase 3 production implementation.
 
 ## Phase 1 — App Foundation
 

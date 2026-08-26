@@ -40,7 +40,7 @@ Failure:
 - `getTranscript`
 - `getAIReview`
 
-`processMeeting` ต้องเริ่มงานแบบ asynchronous และคืน response ภายในเวลาสั้น โดยไม่รอ provider ถอดเสียงจนเสร็จใน HTTP request เดียว ผลลัพธ์ขั้นต่ำของ `processMeeting`/`getProcessingStatus` ควรมีรูปแบบ provider-neutral ดังนี้:
+`processMeeting` ต้องเริ่มงานแบบ asynchronous และคืน response ภายในเวลาสั้น โดยไม่รอ local worker หรือ external provider ถอดเสียงจนเสร็จใน HTTP request เดียว ผลลัพธ์ขั้นต่ำของ `processMeeting`/`getProcessingStatus` ควรมีรูปแบบ provider-neutral ดังนี้:
 
 ```json
 {
@@ -138,9 +138,9 @@ For `LIVE` mode, partial transcript events are preview data only. After the meet
 
 ## Transcription Adapter Contract
 
-The backend keeps Speech-to-Text behind a capability-aware adapter. The minimum batch operations are `submitBatch`, `getJobStatus` and `fetchBatchResult`; live operations are optional. Every provider result must normalize to `id`, `meetingId`, `speaker`, `startMs`, `endMs`, `text`, and `importantMarker`. V1 speaker values are generic labels within one meeting and never represent voice identity.
+The backend keeps Speech-to-Text behind a capability-aware adapter. The minimum batch operations are `submitBatch`, `getJobStatus` and `fetchBatchResult`; live operations are optional. The default V1 implementation may be a local worker with zero STT service fee; an external provider adapter is fallback-only unless a separate product decision permits its cost. Every adapter result must normalize to `id`, `meetingId`, `speaker`, `startMs`, `endMs`, `text`, and `importantMarker`. V1 speaker values are generic labels within one meeting and never represent voice identity.
 
-The adapter must classify provider errors into retryable transient failures (for example timeout, rate limit or 5xx) and non-retryable configuration/input failures (for example unsupported locale, invalid audio or authentication). Retry must use the same idempotency key and must not duplicate persisted segments.
+The adapter must classify worker/provider errors into retryable transient failures (for example temporary storage/network failure, timeout, rate limit or 5xx) and non-retryable configuration/input failures (for example unsupported locale, invalid audio, missing model or authentication). Local resource exhaustion must be reported as a readable failure and must not silently fall back to a paid provider. Retry must use the same idempotency key and must not duplicate persisted segments.
 
 ## Final Report Contract
 
@@ -177,6 +177,8 @@ Recommended baseline:
 - `TRANSCRIPTION_FAILED`
 - `TRANSCRIPTION_AUDIO_TOO_LARGE`
 - `TRANSCRIPTION_UNSUPPORTED`
+- `TRANSCRIPTION_WORKER_UNAVAILABLE`
+- `TRANSCRIPTION_RESOURCE_EXHAUSTED`
 - `AI_OUTPUT_INVALID`
 - `AI_PROCESSING_FAILED`
 - `PDF_GENERATION_FAILED`

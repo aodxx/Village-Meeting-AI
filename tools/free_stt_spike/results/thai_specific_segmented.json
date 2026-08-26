@@ -1,0 +1,49 @@
+{
+  "adapter": {
+    "providerId": "local-thai-biodatlab-segmented",
+    "asrModel": "biodatlab/distill-whisper-th-small",
+    "boundaryModel": "Systran/faster-whisper-base",
+    "diarization": "pitch-kmeans-baseline",
+    "language": "th",
+    "sttFee": 0
+  },
+  "audio": {
+    "path": "tools/free_stt_spike/fixtures/thai_two_speaker_gtts.wav",
+    "sizeBytes": 1302014
+  },
+  "processingSeconds": 43.963,
+  "detectedLanguage": "th",
+  "segments": [
+    {
+      "speaker": "SPEAKER_1",
+      "startMs": 0,
+      "endMs": 6860,
+      "text": "สวัสดีครับ วันนี้เราจะประชุมเรื่องน้ำประปาของหมู่บ้าน"
+    },
+    {
+      "speaker": "SPEAKER_2",
+      "startMs": 7280,
+      "endMs": 17740,
+      "text": "ขอเสนอ ให้ ปลูก ศพ ผัง เก็บ หนา และ บันทึก ปัญหา ที่ พลุก"
+    },
+    {
+      "speaker": "SPEAKER_1",
+      "startMs": 17740,
+      "endMs": 25070,
+      "text": "ที่ประชุมควรกำหนดวันซ่อมและติดตามผลในสัปดาห์หน้า"
+    },
+    {
+      "speaker": "SPEAKER_2",
+      "startMs": 26650,
+      "endMs": 39310,
+      "text": "รสชาติ ค่ะ โห ให้ ผู้รัก ผิดช้า แจ้ง ความคิด ได้ ต่อ ที่ ประชิง"
+    }
+  ],
+  "rawBoundaryCount": 4,
+  "speakerClusterIds": [
+    0,
+    1,
+    0,
+    1
+  ]
+}

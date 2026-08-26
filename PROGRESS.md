@@ -27,6 +27,9 @@ Status: **Commercial-provider recommendation superseded; zero-service-fee transc
 - [x] Zero-cost STT product policy added in `docs/FREE-STT-POLICY.md`
 - [x] Zero-cost next-step brief added in `docs/ZERO-COST-STT-NEXT-STEP.md`
 - [x] Azure-first recommendation removed from the active V1 direction
+- [x] Free/open-source candidate shortlist researched and documented
+- [x] Local Thai STT prototype runs end-to-end with zero STT service fee
+- [x] Smoke-test result and evaluator committed under `tools/free_stt_spike/`
 
 ## Important Product Decisions
 
@@ -92,13 +95,19 @@ Avoid building a large UI or PDF system before a viable zero-cost transcription 
 - [x] Initial paid-provider comparison preserved for reference
 - [x] Provider-neutral adapter boundary documented
 - [x] Zero-cost STT policy documented
-- [ ] Free/open-source candidate shortlist researched
-- [ ] At least one zero-service-fee prototype runs end-to-end
+- [x] Free/open-source candidate shortlist researched
+- [x] At least one zero-service-fee prototype runs end-to-end
 - [ ] Authorized Thai audio benchmark completed
 - [ ] 1-hour test completed
 - [ ] Long-meeting/chunking path demonstrated
-- [ ] Actual processing time and resource requirements recorded
-- [ ] Final zero-cost V1 transcription architecture selected
+- [x] Initial CPU processing time and model/runtime requirements recorded; full resource benchmark remains open
+- [x] Local Thai STT worker selected as the Phase 0.1 implementation candidate; production quality confirmation remains open
+
+## Phase 0.1 Continuation Result
+
+The committed E2E smoke test uses the Thai-specific `biodatlab/distill-whisper-th-small` model for transcription, `faster-whisper` base with VAD for speech boundaries, and deterministic pitch-feature clustering for generic labels. It runs locally on CPU without a paid STT service call. On the synthetic Thai fixture of approximately 38.4 seconds, the clean run took approximately 43.963 seconds and produced four normalized segments. The evaluator passed zero STT fee, Thai detection, timestamp/schema validation, and speaker pattern `1,2,1,2`; the average CER proxy was `0.1611`.
+
+This result proves local pipeline plumbing only. It does not close the real-meeting quality gate because the fixture is synthetic, the speaker method is a baseline rather than trained diarization, and no 1-hour/3-hour or authorized real-audio benchmark has been completed. The next step is the real-audio benchmark and long-audio resource/restart test described in `docs/ZERO-COST-STT-NEXT-STEP.md`; no large UI should start before that gate is addressed.
 
 ## Definition of Phase 0 Done
 

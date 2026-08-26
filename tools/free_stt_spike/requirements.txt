@@ -1,0 +1,7 @@
+faster-whisper==1.2.1
+torch>=2.0
+transformers>=4.38
+sentencepiece>=0.1.99
+soundfile>=0.12
+# Optional: only needed to regenerate the synthetic Thai gTTS fixture.
+gTTS>=2.5

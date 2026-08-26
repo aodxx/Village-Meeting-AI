@@ -29,6 +29,8 @@ Google Apps Script Web App API
    |
    +--> AI Service Layer
           |--> Speech-to-Text Adapter
+          |      |--> Local STT Worker (zero STT fee prototype)
+          |      +--> External provider adapter (fallback only)
           +--> Gemini Analysis Adapter
 ```
 
@@ -99,6 +101,7 @@ Apps Script เป็น API orchestration layer:
 - Manage Google Drive files
 - Call AI adapters
 - Enforce meeting state transitions
+- Create/persist asynchronous transcription jobs
 - Generate report payload/PDF
 - Public report read endpoint
 
@@ -169,11 +172,13 @@ Provider สามารถเปลี่ยนได้ในอนาคต�
 
 ### 5.3 Phase 0.1 STT Decision
 
-สำหรับ V1 ให้ใช้ **Azure AI Speech Batch Transcription — Standard** เป็น implementation candidate หลักของ `POST` transcription โดยกำหนด `th-TH`, ใช้ mono audio, เปิด diarization และขอ word-level timestamps ผ่าน Speech-to-text REST API v3.2 หรือใหม่กว่า การตัดสินใจนี้เป็น provider selection สำหรับ adapter implementation ไม่ใช่การเปิดเผย provider ใน frontend, API response หรือ Report layer
+สำหรับ V1 ภายใต้นโยบาย zero-STT-fee ให้ใช้ **local STT worker** เป็น implementation candidate หลักของ `POST` transcription โดยใช้ Thai-specific model, local speech-boundary detection และ generic speaker-label adapter การตัดสินใจนี้ไม่ทำให้ระบบผูกกับโมเดลหรือ runtime เดียว เพราะผลลัพธ์ต้อง normalize เป็น schema กลางและไม่เปิดเผย implementation ใน frontend, API response หรือ Report layer
 
-Azure batch เป็น asynchronous และเอกสารระบุว่า diarization ใช้กับ mono audio, รองรับผู้พูดน้อยกว่า 36 คน และจำกัด source audio 240 นาทีต่อไฟล์เมื่อเปิด diarization ซึ่งครอบคลุมเป้าหมาย V1 1–3 ชั่วโมง [1] [2] ราคามาตรฐาน batch เป็นข้อมูลที่ต้องตรวจซ้ำก่อน production แต่หน้าราคา ณ Technical Spike ระบุ `$0.18` ต่อ audio hour และรวม batch diarization แล้ว [3]
+Azure Speech Batch Standard ยังคงเป็น paid fallback ที่มีข้อจำกัดเหมาะสมสำหรับกรณี local worker ไม่พร้อม แต่ไม่ใช่ default ภายใต้ policy ใหม่ Azure batch เป็น asynchronous และเอกสารระบุว่า diarization ใช้กับ mono audio, รองรับผู้พูดน้อยกว่า 36 คน และจำกัด source audio 240 นาทีต่อไฟล์เมื่อเปิด diarization ซึ่งครอบคลุมเป้าหมาย V1 1–3 ชั่วโมง [1] [2] หน้าราคา ณ Technical Spike ระบุ `$0.18` ต่อ audio hour และรวม batch diarization แล้ว [3]
 
-Google Cloud Speech-to-Text V2, Amazon Transcribe และ OpenAI diarization ยังคงเป็น fallback/benchmark candidates โดยต้องผ่าน compatibility และ quality benchmark ก่อนเปลี่ยน provider ระบบต้องเก็บ normalized transcript เดิมและไม่ให้ provider-specific response ไหลไปยัง Report หรือ Public layer
+**Phase 0.1 zero-STT-fee update:** implementation candidate ที่ผ่าน end-to-end smoke test คือ local worker บน CPU ซึ่งใช้ Thai-specific `biodatlab/distill-whisper-th-small` สำหรับข้อความ, `faster-whisper` base + VAD เป็น speech boundaries และ deterministic acoustic clustering เป็น baseline generic speaker labels [6] [7] วิธีนี้ไม่มีค่า STT ต่อ audio minute แต่ต้องมีเครื่องที่ติดตั้ง Python/model และยังไม่ใช่ production-quality diarization ผล smoke test อยู่ใน `tools/free_stt_spike/` และใช้ synthetic audio ที่ไม่มีข้อมูลส่วนตัว
+
+Azure, Google Cloud, Amazon Transcribe และ OpenAI diarization จึงถูกลดสถานะเป็น paid fallback/benchmark candidates ตาม product policy ใหม่ หากไม่ผ่านข้อกำหนด zero-STT-fee ให้ใช้ local worker ก่อน ระบบต้องเก็บ normalized transcript เดิมและไม่ให้ provider-specific response ไหลไปยัง Report หรือ Public layer
 
 `POST` batch result เป็น authoritative transcript สำหรับ AI analysis และ Final Report ส่วน `LIVE` transcript เป็น preview ระหว่างประชุม เมื่อจบประชุมต้อง enqueue `POST` job ใหม่เพื่อสร้าง transcript ที่ authoritative; live partial result ห้ามใช้ยืนยันมติหรือสร้าง Final Report โดยตรง
 
@@ -184,6 +189,12 @@ Adapter ต้องแยกเป็น capability-aware interface โดย�
 ผลลัพธ์จากทุก provider ต้อง normalize เป็น `{ speaker, startMs, endMs, text }` และ map speaker เป็น `SPEAKER_1...` ภายใน Meeting เดียวกันเท่านั้น ห้ามทำ voice identity ข้ามการประชุม การรวม word/phrase timestamp เป็น segment, การบวก chunk offset, การจัดการ overlap และการคำนวณ `ImportantMarker` เป็น responsibility ของ `TranscriptService` ไม่ใช่ Report layer
 
 Raw response, provider job handle และ staging reference เป็น operational metadata ที่ต้องไม่ปรากฏใน Public Report และต้องไม่เก็บ credential/SAS token ไว้ใน Sheet หรือ Drive document
+
+### 5.5 Zero-STT-fee local worker boundary
+
+Apps Script ไม่ควรถูกใช้รัน Python, Whisper model หรือ long-running inference โดยตรง ต้นแบบ Phase 0.1 จึงรันเป็น command-line local worker นอก Apps Script และคืน normalized JSON ตาม adapter contract สำหรับการใช้งาน V1 จริง ต้องเลือกวิธีส่งงานไปยังเครื่องที่ผู้ใช้ควบคุม เช่น worker บนเครื่อง local ที่เปิดใช้งานระหว่าง processing หรือ runtime ที่โครงการมีอยู่แล้ว โดยต้องไม่ถือว่า sandbox ชั่วคราวเป็น production worker
+
+Local worker ต้องรับ audio จาก canonical Drive file หรือไฟล์ที่ผู้ใช้ส่งให้ worker, ทำ preflight, ประมวลผลแบบ bounded chunk, เขียนผลกลับเป็น job result และบันทึก model/config version ทุกครั้ง เมื่อ worker ไม่พร้อมหรือ resource ไม่พอ ระบบต้องคง audio และ job state ไว้เพื่อ retry/fallback ไม่ทำให้ Meeting หรือ Final Report ข้าม state
 
 ## 6. State Machine
 
@@ -223,6 +234,8 @@ Delete guard ต้องตรวจ:
 ### 7.1 Provider staging
 
 Provider ที่เลือกใช้ใน Phase 0.1 รับไฟล์จาก object storage ของ provider ไม่ใช่ Google Drive โดยตรง ดังนั้น backend อาจสร้าง staging copy ชั่วคราวไปยัง Azure Blob หรือ object storage ของ fallback provider ได้ แต่ staging copy ต้องผูกกับ `MeetingID`/job, มี TTL, ไม่ใช่ project root และต้องลบหลังดึงผลสำเร็จหรือตาม failure cleanup policy ต้นฉบับใน `VillageMeetingAI/02-Audio-Temp/` เป็น canonical source จนกว่า audio deletion guard จะผ่าน
+
+สำหรับ zero-STT-fee local worker ไม่จำเป็นต้องสร้าง provider staging root ใหม่ ให้ใช้ไฟล์จาก canonical Drive root หรือสำเนาชั่วคราวที่ worker ควบคุม และเก็บผล technical spike ใน `VillageMeetingAI/90-Tests/` เมื่อมีการใช้ Drive runtime artifacts
 
 ห้ามส่งไฟล์เสียงยาวผ่าน Google Sheets หรือรอ provider ให้เสร็จใน Apps Script request เดียว การย้ายไฟล์และการลบ staging ต้องเป็นขั้นตอนที่ retry ได้และตรวจ resource เดิมก่อนสร้างซ้ำ
 
@@ -269,6 +282,8 @@ Apps Script runtime สูงสุด 6 นาทีต่อ execution แล�
 
 Azure batch มี latency แบบ best-effort; เอกสารระบุว่าช่วง peak อาจรอเริ่มงานได้ถึง 30 นาที และ extreme case อาจนานถึง 24 ชั่วโมง [5] UX จึงต้องรองรับ `PROCESSING` ต่อเนื่อง, การออกจากหน้า, refresh และ retry โดยไม่เปลี่ยน Meeting state ผิดลำดับ
 
+Local worker มีข้อจำกัดต่างจาก provider batch: ต้องมี CPU/RAM/disk สำหรับ model cache, ไม่ควรทำงานใน Apps Script execution และความเร็วขึ้นกับ hardware/โมเดล โดยต้นแบบที่ทดสอบใช้ CPU sandbox ประมาณ 44 วินาทีต่อ synthetic audio ประมาณ 38 วินาที การวัดนี้ใช้เป็น smoke-test observation เท่านั้น ไม่ใช่ SLA และไม่ใช่ตัวแทนไฟล์ประชุม 1–3 ชั่วโมง
+
 ## 11.1 Idempotent processing contract
 
 ทุก transcription job ต้องมี stable `idempotencyKey` ที่ผูกกับ Meeting, audio fingerprint และ STT configuration version พร้อมเก็บ provider job handle แยกใน operational state การ retry หลัง submit สำเร็จต้องค้นหา job เดิมก่อนสร้างงานใหม่ และการ persist transcript ต้องไม่สร้าง `TranscriptSegments` ซ้ำ
@@ -282,6 +297,8 @@ Retry เฉพาะ transient failures เช่น timeout, 429 และ 5xx
 [3]: https://azure.microsoft.com/en-us/pricing/details/speech/ "Azure — Speech pricing"
 [4]: https://developers.google.com/apps-script/guides/services/quotas "Google Apps Script — Quotas for Google Services"
 [5]: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/batch-transcription "Azure — Batch transcription overview"
+[6]: https://huggingface.co/biodatlab/distill-whisper-th-small "Biodatlab — distill-whisper-th-small model card"
+[7]: https://github.com/SYSTRAN/faster-whisper "SYSTRAN — faster-whisper"
 
 ## 12. Future Migration Path
 

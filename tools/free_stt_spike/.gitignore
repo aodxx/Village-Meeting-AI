@@ -1,0 +1,5 @@
+cache/
+fixtures/.gtts-work/
+results/.segments/
+*.pyc
+__pycache__/
